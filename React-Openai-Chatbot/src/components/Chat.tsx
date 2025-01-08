@@ -57,8 +57,6 @@ const Chat: React.FC = () => {
     }
 
     const openaiInstance = new OpenAI({
-      //apiKey: "sk-insurance-service-bot-iFrT87XOEzqlSIxkbPTtT3BlbkFJ39mFPbJxmeK5WnfzkR35",
-      // apiKey: "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",
       apiKey: process?.env.OPEN_API_KEY,
       dangerouslyAllowBrowser: true,
     });
