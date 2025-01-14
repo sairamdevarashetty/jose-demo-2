@@ -57,7 +57,8 @@ const Chat: React.FC = () => {
     }
 
     const openaiInstance = new OpenAI({
-      apiKey: process?.env.OPEN_API_KEY,
+//      apiKey: "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",
+	apiKey: "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",	
       dangerouslyAllowBrowser: true,
     });
 

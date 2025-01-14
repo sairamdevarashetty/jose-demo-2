@@ -136,8 +136,8 @@ async def find_plans(request: QuestionRequest):
     question = request.question.lower()
     
     # Search for a company name in the question
-    company_match = re.search(r'compañía\s(\w+)', question)
-
+    company_match = re.search(r'compañía\s+([a-zA-Záéíóúüñ]+)', question)
+    print("1",company_match)
     try:
         with open("output.json", "r") as file:  # Assuming your JSON file is stored locally
             data = json.load(file)
@@ -148,7 +148,8 @@ async def find_plans(request: QuestionRequest):
     
     if company_match:
         # Extract company name from the question
-        company_name = company_match.group(1)
+        company_name = company_match.group(1).strip().lower()
+        print("2",company_name)
         # Find plans for the specific company
         plans = find_plans_with_ambulancia_aerea(data, company_name)
     else:
