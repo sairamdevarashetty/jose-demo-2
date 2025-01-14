@@ -31,6 +31,7 @@ const Chat: React.FC = () => {
   const [isWaiting, setIsWaiting] = useState<boolean>(false);
   const [messages, setMessages] = useState<Array<MessageDto>>([]);
   const [input, setInput] = useState<string>("");
+  const [showtable,setshowtable] = useState(false);
   const [thread, setThread] = useState<any>(null);
   const [openai, setOpenai] = useState<any>(null);
 
@@ -57,8 +58,8 @@ const Chat: React.FC = () => {
     }
 
     const openaiInstance = new OpenAI({
-//      apiKey: "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",
-	apiKey: "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",	
+     apiKey: "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",
+  	// apiKey: "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",	
       dangerouslyAllowBrowser: true,
     });
 
@@ -69,8 +70,9 @@ const Chat: React.FC = () => {
     setThread(newThread);
   };
 
-  const createNewMessage = (content: string, isUser: boolean) => {
-    let formattedContent:any = isUser ? content : marked(content);
+  const createNewMessage = (content: string, isUser: boolean,shouldmarkcontent:boolean) => {
+    
+    let formattedContent:any = shouldmarkcontent ? content : marked(content);
     // Sanitize the HTML content
     formattedContent = DOMPurify.sanitize(formattedContent);
     const newMessage = new MessageDto(isUser, formattedContent);
@@ -130,7 +132,7 @@ const Chat: React.FC = () => {
       return;
     }
 
-    const updatedMessages = [...messages, createNewMessage(input, true)];
+    const updatedMessages = [...messages, createNewMessage(input, true,true)];
     setMessages(updatedMessages);
     // langsmith.trackEvent({
     //   action: "send_message",
@@ -159,7 +161,7 @@ const Chat: React.FC = () => {
         `Department: ${Department.Department}\File_type: ${Department.File_type}\Text: ${Department.Text}}`
       )).join("\n\n");
 
-      setMessages([...updatedMessages, createNewMessage(response, false)]);
+      setMessages([...updatedMessages, createNewMessage(response, false,false)]);
       // langsmith.trackEvent({
       //   action: "receive_message",
       //   message: response,
@@ -172,27 +174,20 @@ const Chat: React.FC = () => {
       try {
         // Send a message to the thread
         if(query.includes('aerea') && query.includes('ambulancia')) {
-          let apiresponse:any  = await fetchFASTAPI2(input) 
-          console.log("apiresponse",apiresponse)
-          let plans: any = apiresponse.plans;
-
-          let uniqueData = Array.from(
-            new Map(plans.map(item => [`${item.plan}-${item.compania}`, item])).values()
-          );
-
-
-          let data:any = uniqueData.reduce((initial,x:any)=>{return  initial +`El plan es ${ x.plan} de la compañía  ${x.compania}  \n\n` },'')
-          setMessages([...updatedMessages,createNewMessage(data,false)])
+          let apiresponse:any  = await fetchFASTAPI2(input);
+          let outputtablestring = generateTableString(apiresponse);
+          console.log("outputtablestring",outputtablestring)
+          let newmessage= createNewMessage(outputtablestring,false,true)
+          console.log("newmessage",newmessage);
+          setMessages([...updatedMessages,newmessage])
           setIsWaiting(false);
           return
         }
         const flag = processQuestion(query);
-        console.log("flag",flag)
         if (flag == true) {
-
           let apiresponse:any  = await fetchFASTAPI(input) 
           console.log("apiresponse",apiresponse)
-          setMessages([...updatedMessages,createNewMessage(apiresponse.plans.join("\n\n"),false)])
+          setMessages([...updatedMessages,createNewMessage(apiresponse.plans.join("\n\n"),false,false)])
           setIsWaiting(false);
           return
         }
@@ -238,7 +233,7 @@ const Chat: React.FC = () => {
           annotationsList.forEach((trimstring) => {
             newmessage = newmessage.replace(trimstring,"")
           })
-          setMessages([...updatedMessages, createNewMessage(newmessage, false)]);
+          setMessages([...updatedMessages, createNewMessage(newmessage, false,false)]);
         }
       } catch (error) {
         console.error("Error processing message with OpenAI:", error);
@@ -392,4 +387,33 @@ knownCompanies = knownCompanies.filter(function(item, pos) {
   );
 };
 
-export default Chat;
+
+
+
+ 
+
+const generateTableString = (data) => {
+  let table = `
+    <table border="1" style="border-collapse: collapse; width: 100%;">
+      <thead>
+        <tr>
+          <th style="padding: 10px; background-color: grey; color: white;">Plan</th>
+          <th style="padding: 10px; background-color: grey; color: white;">Compañía</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  data.plans.forEach((item) => {
+    table += `
+      <tr>
+        <td style="padding: 10px;">${item.plan}</td>
+        <td style="padding: 10px;">${item.compania}</td>
+      </tr>
+    `;
+  });
+  table += `</tbody></table>`;
+  return table;
+};
+
+
+  export default Chat;
