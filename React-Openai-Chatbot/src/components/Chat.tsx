@@ -175,11 +175,14 @@ const Chat: React.FC = () => {
         // Send a message to the thread
         if(query.includes('aerea') && query.includes('ambulancia')) {
           let apiresponse:any  = await fetchFASTAPI2(input);
-          let outputtablestring = generateTableString(apiresponse);
-          console.log("outputtablestring",outputtablestring)
-          let newmessage= createNewMessage(outputtablestring,false,true)
-          console.log("newmessage",newmessage);
-          setMessages([...updatedMessages,newmessage])
+          if(apiresponse.plans) {
+            let outputtablestring = generateTableString(apiresponse);
+            console.log("outputtablestring",outputtablestring)
+            let newmessage= createNewMessage(outputtablestring,false,true)
+            console.log("newmessage",newmessage);
+            setMessages([...updatedMessages,newmessage])
+
+          }
           setIsWaiting(false);
           return
         }
@@ -187,7 +190,25 @@ const Chat: React.FC = () => {
         if (flag == true) {
           let apiresponse:any  = await fetchFASTAPI(input) 
           console.log("apiresponse",apiresponse)
-          setMessages([...updatedMessages,createNewMessage(apiresponse.plans.join("\n\n"),false,false)])
+          let plans:any= Object.values(apiresponse.plans)[0]
+
+          let result = "";
+
+
+          console.log(plans);
+          console.log(plans.length);
+
+          for (let i = 0; i < plans.length; i++) {
+
+              result += plans[i];
+              if (i < plans.length - 1) { // Add line break only between elements
+                  result += " <br/> ";
+              }
+          }
+
+
+          console.log("RESULT",result)
+          setMessages([...updatedMessages,createNewMessage(result,false,false)])
           setIsWaiting(false);
           return
         }
